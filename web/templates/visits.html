@@ -1,0 +1,83 @@
+{{define "content"}}
+<div class="visits-page" x-data="visitsData()" x-init="loadVisits()">
+    <div class="page-header">
+        <h2>Visits</h2>
+    </div>
+
+    <div class="table-container" x-show="!loading">
+        <table>
+            <thead>
+                <tr>
+                    <th>IP</th>
+                    <th>Country</th>
+                    <th>Path</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th>Latency (ms)</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="visit in visits" :key="visit.id">
+                    <tr>
+                        <td x-text="visit.ip"></td>
+                        <td x-text="visit.country || '-'"></td>
+                        <td x-text="visit.path"></td>
+                        <td><span class="badge" :class="'method-' + visit.method.toLowerCase()" x-text="visit.method"></span></td>
+                        <td><span class="badge" :class="visit.status_code < 400 ? 'status-ok' : 'status-err'" x-text="visit.status_code"></span></td>
+                        <td x-text="visit.latency_ms ? visit.latency_ms.toFixed(1) : '-'"></td>
+                        <td x-text="visit.created_at ? new Date(visit.created_at).toLocaleString() : '-'"></td>
+                    </tr>
+                </template>
+                <tr x-show="visits.length === 0">
+                    <td colspan="7" class="empty">No visits recorded yet.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" x-show="!loading && totalPages > 1">
+        <button class="btn btn-sm" @click="goToPage(currentPage - 1)" x-show="currentPage > 1">Previous</button>
+        <span class="page-info" x-text="'Page ' + currentPage + ' of ' + totalPages"></span>
+        <button class="btn btn-sm" @click="goToPage(currentPage + 1)" x-show="currentPage < totalPages">Next</button>
+    </div>
+
+    <div x-show="loading" class="loading">Loading visits...</div>
+    <div x-show="error" class="error" x-text="error"></div>
+</div>
+
+<script>
+    function visitsData() {
+        return {
+            visits: [],
+            loading: true,
+            error: '',
+            currentPage: 1,
+            totalPages: 1,
+            limit: 20,
+            async loadVisits() {
+                try {
+                    const resp = await fetch('/api/stats/visits?page=' + this.currentPage + '&limit=' + this.limit)
+                        .then(r => r.json());
+                    if (resp.ok) {
+                        this.visits = resp.data.visits;
+                        this.totalPages = Math.ceil(resp.data.total / this.limit) || 1;
+                    } else {
+                        this.error = resp.error || 'Failed to load visits';
+                    }
+                } catch (e) {
+                    this.error = 'Network error';
+                } finally {
+                    this.loading = false;
+                }
+            },
+            goToPage(page) {
+                this.currentPage = page;
+                this.loading = true;
+                this.loadVisits();
+            }
+        };
+    }
+</script>
+{{end}}

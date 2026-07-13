@@ -1,0 +1,162 @@
+{{define "content"}}
+<div class="sites-page" x-data="sitesData()" x-init="loadSites()">
+    <div class="page-header">
+        <h2>Sites</h2>
+        <button class="btn btn-primary" @click="showForm = true" x-show="!showForm">Add Site</button>
+    </div>
+
+    <!-- Create Form -->
+    <div class="form-card" x-show="showForm" x-cloak>
+        <h3>New Site</h3>
+        <form @submit.prevent="createSite">
+            <div class="form-group">
+                <label>Domain</label>
+                <input type="text" x-model="form.domain" placeholder="e.g. app.example.com" required>
+            </div>
+            <div class="form-group">
+                <label>Upstream URL</label>
+                <input type="text" x-model="form.upstream" placeholder="e.g. http://localhost:3000" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" x-text="saving ? 'Saving...' : 'Create'"></button>
+                <button type="button" class="btn btn-secondary" @click="showForm = false" x-show="!saving">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Sites Table -->
+    <div class="table-container" x-show="!loading">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Domain</th>
+                    <th>Upstream</th>
+                    <th>SSL</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="site in sites" :key="site.id">
+                    <tr>
+                        <td x-text="site.id"></td>
+                        <td>
+                            <span x-show="editingId !== site.id" x-text="site.domain"></span>
+                            <input x-show="editingId === site.id" type="text" x-model="editForm.domain" class="edit-input">
+                        </td>
+                        <td>
+                            <span x-show="editingId !== site.id" x-text="site.upstream"></span>
+                            <input x-show="editingId === site.id" type="text" x-model="editForm.upstream" class="edit-input">
+                        </td>
+                        <td x-text="site.ssl_enabled ? 'Yes' : 'No'"></td>
+                        <td x-text="site.active ? 'Yes' : 'No'"></td>
+                        <td class="actions">
+                            <template x-if="editingId !== site.id">
+                                <span>
+                                    <button class="btn btn-sm" @click="startEdit(site)">Edit</button>
+                                    <button class="btn btn-sm btn-danger" @click="deleteSite(site)">Delete</button>
+                                </span>
+                            </template>
+                            <template x-if="editingId === site.id">
+                                <span>
+                                    <button class="btn btn-sm btn-primary" @click="saveEdit(site)">Save</button>
+                                    <button class="btn btn-sm" @click="editingId = null">Cancel</button>
+                                </span>
+                            </template>
+                        </td>
+                    </tr>
+                </template>
+                <tr x-show="sites.length === 0">
+                    <td colspan="6" class="empty">No sites configured.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div x-show="loading" class="loading">Loading sites...</div>
+    <div x-show="error" class="error" x-text="error"></div>
+</div>
+
+<script>
+    function sitesData() {
+        return {
+            sites: [],
+            loading: true,
+            error: '',
+            showForm: false,
+            saving: false,
+            editingId: null,
+            form: { domain: '', upstream: '' },
+            editForm: { domain: '', upstream: '' },
+            async loadSites() {
+                try {
+                    const resp = await fetch('/api/sites').then(r => r.json());
+                    if (resp.ok) this.sites = resp.data;
+                    else this.error = resp.error || 'Failed to load sites';
+                } catch (e) {
+                    this.error = 'Network error';
+                } finally {
+                    this.loading = false;
+                }
+            },
+            async createSite() {
+                this.saving = true;
+                try {
+                    const resp = await fetch('/api/sites', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.form)
+                    }).then(r => r.json());
+                    if (resp.ok) {
+                        this.sites.unshift(resp.data);
+                        this.form = { domain: '', upstream: '' };
+                        this.showForm = false;
+                    } else {
+                        alert('Error: ' + resp.error);
+                    }
+                } catch (e) {
+                    alert('Network error');
+                } finally {
+                    this.saving = false;
+                }
+            },
+            startEdit(site) {
+                this.editingId = site.id;
+                this.editForm.domain = site.domain;
+                this.editForm.upstream = site.upstream;
+            },
+            async saveEdit(site) {
+                try {
+                    const resp = await fetch('/api/sites/' + site.id, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.editForm)
+                    }).then(r => r.json());
+                    if (resp.ok) {
+                        Object.assign(site, resp.data);
+                        this.editingId = null;
+                    } else {
+                        alert('Error: ' + resp.error);
+                    }
+                } catch (e) {
+                    alert('Network error');
+                }
+            },
+            async deleteSite(site) {
+                if (!confirm('Delete site ' + site.domain + '?')) return;
+                try {
+                    const resp = await fetch('/api/sites/' + site.id, { method: 'DELETE' }).then(r => r.json());
+                    if (resp.ok) {
+                        this.sites = this.sites.filter(s => s.id !== site.id);
+                    } else {
+                        alert('Error: ' + resp.error);
+                    }
+                } catch (e) {
+                    alert('Network error');
+                }
+            }
+        };
+    }
+</script>
+{{end}}

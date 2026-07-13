@@ -1,0 +1,13 @@
+services:
+  proxi-pulse:
+    build: .
+    container_name: proxi-pulse
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.yaml:/etc/proxi-pulse/config.yaml:ro
+      - ./data:/data
+      - ./GeoLite2-City.mmdb:/data/GeoLite2-City.mmdb:ro
+    restart: unless-stopped
+    environment:
+      PROXI_PULSE_CONFIG: /etc/proxi-pulse/config.yaml
