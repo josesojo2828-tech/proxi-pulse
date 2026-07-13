@@ -1,53 +1,112 @@
 # proxi-pulse 🌐
 
-![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)
-![Prometheus](https://img.shields.io/badge/Metrics-Prometheus-E6522C?style=flat&logo=prometheus)
-![License](https://img.shields.io/badge/License-MIT-green)
+[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
+[![Prometheus](https://img.shields.io/badge/Metrics-Prometheus-E6522C?logo=prometheus)](https://prometheus.io)
+[![Grafana](https://img.shields.io/badge/Dashboard-Grafana-F46800?logo=grafana)](https://grafana.com)
 
-**Un reverse proxy HTTP/HTTPS con geolocalización, métricas en vivo y observabilidad.**
+**Reverse proxy con geolocalización de visitantes, métricas en vivo y dashboard Grafana.**
 
-Sabés de dónde viene cada request, cuánto tardó, y adónde fue. Pensado para homelabs,
-entornos de producción chicos, y cualquiera que quiera tener visibilidad posta de su
-infraestructura sin morir en el intento.
-
-Parte del ecosistema de monitoreo junto con
-[net-probe-exporter](https://github.com/tuusuario/net-probe-exporter).
-
-## Características
-
-- **Geo-routing**: identificá país, ciudad e ISP de cada request con MaxMind GeoLite2
-- **Métricas Prometheus**: RPS, latencia P50/P95/P99, status codes — todo etiquetado por geolocalización
-- **Dashboard Grafana ready**: conectás Prometheus, importás el JSON y tenés un mapa mundial de tráfico
-- **Ligero**: Go puro, sin frameworks, `httputil.ReverseProxy` de la stdlib, nada de magia rara
-- **Docker**: `docker-compose up` y tenés el proxy + Prometheus + Grafana funcionando
+Sabé de dónde viene cada visita a tus sitios sin meter scripts de tracking.
+El proxy captura país, ciudad, latencia y más — automaticamente.
 
 ## Stack
 
 | Capa | Tecnología |
 |------|-----------|
-| Lenguaje | Go 1.25+ |
-| Proxy | `net/http/httputil.ReverseProxy` |
-| GeoIP | MaxMind GeoLite2 |
-| Métricas | prometheus/client_golang |
-| Config | YAML |
+| Proxy | Go `net/http/httputil.ReverseProxy` |
+| GeoIP | MaxMind GeoLite2 + LRU cache |
+| Métricas | Prometheus `client_golang` |
+| Dashboard | Grafana (pre-provisionado) |
+| Admin UI | Go templates + HTMX |
+| Almacenamiento | SQLite (modernc.org — pure Go) |
 | Infra | Docker + docker-compose |
 
 ## Quick Start
 
 ```bash
-# TODO: cuando el proyecto esté implementado, acá van los comandos
+# 1. Clonar
+git clone https://github.com/josesojo2828/proxi-pulse.git
+cd proxi-pulse
+
+# 2. Descargar GeoLite2-City.mmdb
+#    Registrarse en https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
+#    y copiar el archivo a ./data/GeoLite2-City.mmdb
+
+# 3. Configurar (opcional — hay defaults)
+cp config.yaml.example config.yaml
+# editar según necesidad
+
+# 4. Levantar el stack
+docker compose up -d
+
+# 5. Abrir URLs:
+#    Admin UI:  http://localhost:8080
+#    Grafana:   http://localhost:3000 (admin:admin)
+#    Prometheus: http://localhost:9090
 ```
 
-Por ahora está en construcción, bro. Dale una estrella y segui el repo si te interesa.
+## Admin UI
 
-## Roadmap
+Interfaz web simple para administrar los sitios:
 
-- [x] Repo + README (esto)
-- [ ] **v1**: Proxy básico + GeoIP + métricas Prometheus + dashboard Grafana
-- [ ] **v2**: Logging estructurado + Loki para trazabilidad
-- [ ] **v3**: Auto SSL / Let's Encrypt (porque en 2026 no tener HTTPS es pecado)
-- [ ] **v4**: Dashboard web propio con mapa de calor en vivo
+- **Dashboard** — resumen de stats
+- **Sites** — CRUD de dominios y upstreams
+- **Visits** — tabla paginada de visitas recientes
+
+## API REST
+
+Endpoint para integraciones:
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | /api/sites | Listar sites |
+| POST | /api/sites | Crear site `{"domain":"...","upstream":"..."}` |
+| GET | /api/sites/{id} | Obtener site |
+| PUT | /api/sites/{id} | Actualizar site |
+| DELETE | /api/sites/{id} | Eliminar site |
+| GET | /api/stats/overview | Stats generales |
+| GET | /api/stats/visits?page=&limit=&site_id= | Visitas paginadas |
+| GET | /api/stats/countries | Visitas por país |
+
+## Métricas Prometheus
+
+Expuestas en `/metrics`:
+
+| Métrica | Tipo | Labels |
+|---------|------|--------|
+| proxi_pulse_requests_total | Counter | host, country, status |
+| proxi_pulse_request_duration_ms | Histogram | host, country |
+| proxi_pulse_active_connections | Gauge | — |
+| proxi_pulse_geo_lookup_duration_ms | Histogram | — |
+| proxi_pulse_sites_total | Gauge | — |
+
+## Dashboard Grafana
+
+Incluye dashboard pre-provisionado con:
+- 🌍 Mapa mundial de tráfico por país
+- 📊 Top países y hosts
+- 📈 RPS y latencia P50/P95
+- 🔢 Conexiones activas
+- 📋 Top user agents
+
+## Docker Compose
+
+```
+docker compose up -d
+┌── proxi-pulse :8080   → Proxy + Admin UI + /metrics
+├── prometheus  :9090   → Almacenamiento de métricas
+└── grafana     :3000   → Dashboards (provisionados)
+```
+
+## Desarrollo
+
+```bash
+make build    # Compilar
+make run      # Ejecutar local
+make test     # Tests
+make clean    # Limpiar binarios
+```
 
 ## Licencia
 
-[MIT](LICENSE) — hacé lo que quieras, si te sirve, joya.
+MIT

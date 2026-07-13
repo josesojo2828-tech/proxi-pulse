@@ -1,0 +1,9 @@
+server:
+  port: 8080
+
+db:
+  path: /data/proxi-pulse.db
+
+geo:
+  mmdb_path: /data/GeoLite2-City.mmdb
+  cache_size: 50000

@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -24,6 +25,9 @@ func NewManager() *Manager {
 
 // AddOrUpdate creates or updates a reverse proxy for a domain.
 func (m *Manager) AddOrUpdate(domain, upstream string) error {
+	if domain == "" {
+		return fmt.Errorf("domain must not be empty")
+	}
 	u, err := url.Parse(upstream)
 	if err != nil {
 		return err
