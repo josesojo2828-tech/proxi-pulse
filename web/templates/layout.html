@@ -2,28 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Proxi-Pulse</title>
     <script src="https://unpkg.com/htmx.org@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1/dist/leaflet.js"></script>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <nav class="sidebar">
-        <div class="sidebar-header">
-            <h1>Proxi-Pulse</h1>
-        </div>
-        <ul class="nav-links">
-            <li><a href="/" class="nav-link">Dashboard</a></li>
-            <li><a href="/sites" class="nav-link">Sites</a></li>
-            <li><a href="/visits" class="nav-link">Visits</a></li>
-            <li><a href="/geo" class="nav-link">Geo Map</a></li>
-        </ul>
+    <nav>
+        <a href="/">Dashboard</a>
+        <a href="/sites">Sites</a>
+        <a href="/visits">Visits</a>
     </nav>
-    <main class="content">
+    <main>
         {{template "content" .}}
     </main>
 </body>

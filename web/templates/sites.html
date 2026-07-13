@@ -1,31 +1,29 @@
 {{define "content"}}
-<div class="sites-page" x-data="sitesData()" x-init="loadSites()">
+<div class="sites-page">
     <div class="page-header">
         <h2>Sites</h2>
-        <button class="btn btn-primary" @click="showForm = true" x-show="!showForm">Add Site</button>
+        <button class="btn btn-primary" id="showFormBtn">Add Site</button>
     </div>
 
-    <!-- Create Form -->
-    <div class="form-card" x-show="showForm" x-cloak>
+    <div class="form-card" id="createForm" style="display:none">
         <h3>New Site</h3>
-        <form @submit.prevent="createSite">
+        <form id="siteForm">
             <div class="form-group">
                 <label>Domain</label>
-                <input type="text" x-model="form.domain" placeholder="e.g. app.example.com" required>
+                <input type="text" name="domain" placeholder="e.g. app.example.com" required>
             </div>
             <div class="form-group">
                 <label>Upstream URL</label>
-                <input type="text" x-model="form.upstream" placeholder="e.g. http://localhost:3000" required>
+                <input type="text" name="upstream" placeholder="e.g. http://localhost:3000" required>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary" x-text="saving ? 'Saving...' : 'Create'"></button>
-                <button type="button" class="btn btn-secondary" @click="showForm = false" x-show="!saving">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create</button>
+                <button type="button" class="btn btn-secondary" id="cancelFormBtn">Cancel</button>
             </div>
         </form>
     </div>
 
-    <!-- Sites Table -->
-    <div class="table-container" x-show="!loading">
+    <div class="table-container" id="sitesTable">
         <table>
             <thead>
                 <tr>
@@ -37,126 +35,111 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
-                <template x-for="site in sites" :key="site.id">
-                    <tr>
-                        <td x-text="site.id"></td>
-                        <td>
-                            <span x-show="editingId !== site.id" x-text="site.domain"></span>
-                            <input x-show="editingId === site.id" type="text" x-model="editForm.domain" class="edit-input">
-                        </td>
-                        <td>
-                            <span x-show="editingId !== site.id" x-text="site.upstream"></span>
-                            <input x-show="editingId === site.id" type="text" x-model="editForm.upstream" class="edit-input">
-                        </td>
-                        <td x-text="site.ssl_enabled ? 'Yes' : 'No'"></td>
-                        <td x-text="site.active ? 'Yes' : 'No'"></td>
-                        <td class="actions">
-                            <template x-if="editingId !== site.id">
-                                <span>
-                                    <button class="btn btn-sm" @click="startEdit(site)">Edit</button>
-                                    <button class="btn btn-sm btn-danger" @click="deleteSite(site)">Delete</button>
-                                </span>
-                            </template>
-                            <template x-if="editingId === site.id">
-                                <span>
-                                    <button class="btn btn-sm btn-primary" @click="saveEdit(site)">Save</button>
-                                    <button class="btn btn-sm" @click="editingId = null">Cancel</button>
-                                </span>
-                            </template>
-                        </td>
-                    </tr>
-                </template>
-                <tr x-show="sites.length === 0">
-                    <td colspan="6" class="empty">No sites configured.</td>
-                </tr>
+            <tbody id="sitesBody">
+                <tr><td colspan="6" class="empty">Loading sites...</td></tr>
             </tbody>
         </table>
     </div>
 
-    <div x-show="loading" class="loading">Loading sites...</div>
-    <div x-show="error" class="error" x-text="error"></div>
+    <div id="errorMsg" class="error" style="display:none"></div>
 </div>
 
 <script>
-    function sitesData() {
-        return {
-            sites: [],
-            loading: true,
-            error: '',
-            showForm: false,
-            saving: false,
-            editingId: null,
-            form: { domain: '', upstream: '' },
-            editForm: { domain: '', upstream: '' },
-            async loadSites() {
-                try {
-                    const resp = await fetch('/api/sites').then(r => r.json());
-                    if (resp.ok) this.sites = resp.data;
-                    else this.error = resp.error || 'Failed to load sites';
-                } catch (e) {
-                    this.error = 'Network error';
-                } finally {
-                    this.loading = false;
-                }
-            },
-            async createSite() {
-                this.saving = true;
-                try {
-                    const resp = await fetch('/api/sites', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.form)
-                    }).then(r => r.json());
-                    if (resp.ok) {
-                        this.sites.unshift(resp.data);
-                        this.form = { domain: '', upstream: '' };
-                        this.showForm = false;
-                    } else {
-                        alert('Error: ' + resp.error);
-                    }
-                } catch (e) {
-                    alert('Network error');
-                } finally {
-                    this.saving = false;
-                }
-            },
-            startEdit(site) {
-                this.editingId = site.id;
-                this.editForm.domain = site.domain;
-                this.editForm.upstream = site.upstream;
-            },
-            async saveEdit(site) {
-                try {
-                    const resp = await fetch('/api/sites/' + site.id, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.editForm)
-                    }).then(r => r.json());
-                    if (resp.ok) {
-                        Object.assign(site, resp.data);
-                        this.editingId = null;
-                    } else {
-                        alert('Error: ' + resp.error);
-                    }
-                } catch (e) {
-                    alert('Network error');
-                }
-            },
-            async deleteSite(site) {
-                if (!confirm('Delete site ' + site.domain + '?')) return;
-                try {
-                    const resp = await fetch('/api/sites/' + site.id, { method: 'DELETE' }).then(r => r.json());
-                    if (resp.ok) {
-                        this.sites = this.sites.filter(s => s.id !== site.id);
-                    } else {
-                        alert('Error: ' + resp.error);
-                    }
-                } catch (e) {
-                    alert('Network error');
-                }
-            }
-        };
+    const api = (path, opts) => fetch('/api' + path, opts).then(r => r.json());
+    const tbody = document.getElementById('sitesBody');
+
+    document.getElementById('showFormBtn').onclick = () => document.getElementById('createForm').style.display = 'block';
+    document.getElementById('cancelFormBtn').onclick = () => document.getElementById('createForm').style.display = 'none';
+
+    document.getElementById('siteForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const resp = await api('/sites', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({domain: fd.get('domain'), upstream: fd.get('upstream')})
+        });
+        if (resp.ok) {
+            e.target.reset();
+            document.getElementById('createForm').style.display = 'none';
+            loadSites();
+        } else {
+            alert('Error: ' + resp.error);
+        }
+    };
+
+    async function loadSites() {
+        const resp = await api('/sites');
+        if (!resp.ok) { showError(resp.error); return; }
+        tbody.innerHTML = resp.data.map(site => {
+            const editId = 'edit-' + site.id;
+            return `<tr>
+                <td>${site.id}</td>
+                <td><span class="view-mode" data-id="${site.id}">${escHtml(site.domain)}</span>
+                    <input class="edit-mode edit-input" data-id="${site.id}" style="display:none" value="${escHtml(site.domain)}"></td>
+                <td><span class="view-mode" data-id="${site.id}">${escHtml(site.upstream)}</span>
+                    <input class="edit-mode edit-input" data-id="${site.id}" style="display:none" value="${escHtml(site.upstream)}"></td>
+                <td>${site.ssl_enabled ? 'Yes' : 'No'}</td>
+                <td>${site.active ? 'Yes' : 'No'}</td>
+                <td class="actions">
+                    <span class="view-mode" data-id="${site.id}">
+                        <button class="btn btn-sm" onclick="startEdit(${site.id})">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSite(${site.id})">Delete</button>
+                    </span>
+                    <span class="edit-mode" data-id="${site.id}" style="display:none">
+                        <button class="btn btn-sm btn-primary" onclick="saveEdit(${site.id})">Save</button>
+                        <button class="btn btn-sm" onclick="cancelEdit(${site.id})">Cancel</button>
+                    </span>
+                </td>
+            </tr>`;
+        }).join('');
     }
+
+    let editingId = null;
+
+    function startEdit(id) {
+        editingId = id;
+        document.querySelectorAll('.view-mode').forEach(el => el.style.display = el.dataset.id == id ? 'none' : '');
+        document.querySelectorAll('.edit-mode').forEach(el => el.style.display = el.dataset.id == id ? '' : 'none');
+    }
+
+    function cancelEdit(id) {
+        editingId = null;
+        document.querySelectorAll('.view-mode').forEach(el => el.style.display = '');
+        document.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'none');
+    }
+
+    async function saveEdit(id) {
+        const domain = document.querySelector(`.edit-mode[data-id="${id}"]`).value;
+        const upstream = document.querySelectorAll(`.edit-mode[data-id="${id}"]`)[1].value;
+        const resp = await api('/sites/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({domain, upstream})
+        });
+        if (resp.ok) { cancelEdit(id); loadSites(); }
+        else { alert('Error: ' + resp.error); }
+    }
+
+    async function deleteSite(id) {
+        if (!confirm('Delete this site?')) return;
+        const resp = await api('/sites/' + id, {method: 'DELETE'});
+        if (resp.ok) loadSites();
+        else alert('Error: ' + resp.error);
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorMsg');
+        el.textContent = msg;
+        el.style.display = '';
+    }
+
+    function escHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    loadSites();
 </script>
 {{end}}

@@ -1,10 +1,10 @@
 {{define "content"}}
-<div class="visits-page" x-data="visitsData()" x-init="loadVisits()">
+<div class="visits-page">
     <div class="page-header">
         <h2>Visits</h2>
     </div>
 
-    <div class="table-container" x-show="!loading">
+    <div class="table-container">
         <table>
             <thead>
                 <tr>
@@ -17,67 +17,78 @@
                     <th>Timestamp</th>
                 </tr>
             </thead>
-            <tbody>
-                <template x-for="visit in visits" :key="visit.id">
-                    <tr>
-                        <td x-text="visit.ip"></td>
-                        <td x-text="visit.country || '-'"></td>
-                        <td x-text="visit.path"></td>
-                        <td><span class="badge" :class="'method-' + visit.method.toLowerCase()" x-text="visit.method"></span></td>
-                        <td><span class="badge" :class="visit.status_code < 400 ? 'status-ok' : 'status-err'" x-text="visit.status_code"></span></td>
-                        <td x-text="visit.latency_ms ? visit.latency_ms.toFixed(1) : '-'"></td>
-                        <td x-text="visit.created_at ? new Date(visit.created_at).toLocaleString() : '-'"></td>
-                    </tr>
-                </template>
-                <tr x-show="visits.length === 0">
-                    <td colspan="7" class="empty">No visits recorded yet.</td>
-                </tr>
+            <tbody id="visitsBody">
+                <tr><td colspan="7" class="empty">Loading visits...</td></tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Pagination -->
-    <div class="pagination" x-show="!loading && totalPages > 1">
-        <button class="btn btn-sm" @click="goToPage(currentPage - 1)" x-show="currentPage > 1">Previous</button>
-        <span class="page-info" x-text="'Page ' + currentPage + ' of ' + totalPages"></span>
-        <button class="btn btn-sm" @click="goToPage(currentPage + 1)" x-show="currentPage < totalPages">Next</button>
+    <div class="pagination" id="pagination" style="display:none">
+        <button class="btn btn-sm" id="prevPage">Previous</button>
+        <span class="page-info" id="pageInfo"></span>
+        <button class="btn btn-sm" id="nextPage">Next</button>
     </div>
 
-    <div x-show="loading" class="loading">Loading visits...</div>
-    <div x-show="error" class="error" x-text="error"></div>
+    <div id="visitsError" class="error" style="display:none"></div>
 </div>
 
 <script>
-    function visitsData() {
-        return {
-            visits: [],
-            loading: true,
-            error: '',
-            currentPage: 1,
-            totalPages: 1,
-            limit: 20,
-            async loadVisits() {
-                try {
-                    const resp = await fetch('/api/stats/visits?page=' + this.currentPage + '&limit=' + this.limit)
-                        .then(r => r.json());
-                    if (resp.ok) {
-                        this.visits = resp.data.visits;
-                        this.totalPages = Math.ceil(resp.data.total / this.limit) || 1;
-                    } else {
-                        this.error = resp.error || 'Failed to load visits';
-                    }
-                } catch (e) {
-                    this.error = 'Network error';
-                } finally {
-                    this.loading = false;
-                }
-            },
-            goToPage(page) {
-                this.currentPage = page;
-                this.loading = true;
-                this.loadVisits();
-            }
-        };
+    const tbody = document.getElementById('visitsBody');
+    const pagination = document.getElementById('pagination');
+    const pageInfo = document.getElementById('pageInfo');
+
+    let currentPage = 1;
+    let totalPages = 1;
+    const limit = 20;
+
+    document.getElementById('prevPage').onclick = () => goToPage(currentPage - 1);
+    document.getElementById('nextPage').onclick = () => goToPage(currentPage + 1);
+
+    async function loadVisits() {
+        const resp = await fetch('/api/stats/visits?page=' + currentPage + '&limit=' + limit).then(r => r.json());
+        if (!resp.ok) {
+            document.getElementById('visitsError').textContent = resp.error;
+            document.getElementById('visitsError').style.display = '';
+            return;
+        }
+        totalPages = Math.ceil(resp.data.total / limit) || 1;
+        tbody.innerHTML = resp.data.visits.map(v => {
+            const lat = v.latency_ms ? v.latency_ms.toFixed(1) : '-';
+            const ts = v.created_at ? new Date(v.created_at).toLocaleString() : '-';
+            const statusClass = v.status_code < 400 ? 'status-ok' : 'status-err';
+            return `<tr>
+                <td>${escHtml(v.ip)}</td>
+                <td>${v.country || '-'}</td>
+                <td>${escHtml(v.path)}</td>
+                <td><span class="badge method-${v.method.toLowerCase()}">${escHtml(v.method)}</span></td>
+                <td><span class="badge ${statusClass}">${v.status_code}</span></td>
+                <td>${lat}</td>
+                <td>${ts}</td>
+            </tr>`;
+        }).join('');
+
+        if (totalPages > 1) {
+            pagination.style.display = '';
+            pageInfo.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+            document.getElementById('prevPage').style.display = currentPage > 1 ? '' : 'none';
+            document.getElementById('nextPage').style.display = currentPage < totalPages ? '' : 'none';
+        } else {
+            pagination.style.display = 'none';
+        }
     }
+
+    function goToPage(page) {
+        currentPage = page;
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">Loading...</td></tr>';
+        loadVisits();
+    }
+
+    function escHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    loadVisits();
 </script>
 {{end}}

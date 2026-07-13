@@ -1,0 +1,263 @@
+{
+  "title": "Proxi-Pulse",
+  "tags": ["proxi-pulse", "proxy"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(proxi_pulse_requests_total[1m]))",
+          "legendFormat": "Total"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Latency P50 / P95",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(proxi_pulse_request_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(proxi_pulse_request_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "P95"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Active Connections",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 4, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "proxi_pulse_active_connections",
+          "legendFormat": "Active Connections"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Requests by Country",
+      "type": "barchart",
+      "gridPos": { "h": 10, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "legend": { "displayMode": "hidden", "showLegend": false }
+      },
+      "targets": [
+        {
+          "expr": "topk(10, sum(rate(proxi_pulse_requests_total[5m])) by (country))",
+          "legendFormat": "{{country}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Requests by Host",
+      "type": "barchart",
+      "gridPos": { "h": 10, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "legend": { "displayMode": "hidden", "showLegend": false }
+      },
+      "targets": [
+        {
+          "expr": "topk(10, sum(rate(proxi_pulse_requests_total[5m])) by (host))",
+          "legendFormat": "{{host}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "World Map",
+      "type": "geomap",
+      "gridPos": { "h": 15, "w": 12, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "continuous-GrYlRd" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "controls": {
+          "showZoom": true,
+          "showAttribution": false
+        },
+        "mapCenter": { "lat": 20, "lng": 0, "fixed": true },
+        "mapView": { "id": "fit" },
+        "basemap": { "name": "OpenStreetMap", "type": "osm-standard" },
+        "layers": [
+          {
+            "type": "heatmap",
+            "name": "Traffic by Country",
+            "config": {
+              "size": { "fixed": 15, "min": 5, "max": 30 },
+              "opacity": 0.6,
+              "filterData": { "values": false }
+            },
+            "location": {
+              "mode": "lookup",
+              "lookup": "country"
+            }
+          }
+        ],
+        "tooltip": { "mode": "details" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(proxi_pulse_requests_total[5m])) by (country)",
+          "legendFormat": "{{country}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Top User Agents",
+      "type": "table",
+      "gridPos": { "h": 15, "w": 12, "x": 12, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "left",
+            "displayMode": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Value" },
+            "properties": [
+              { "id": "custom.width", "value": 100 },
+              { "id": "unit", "value": "short" },
+              { "id": "displayName", "value": "Requests" }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "footer": {
+          "show": false,
+          "reducer": ["sum"],
+          "countRows": false
+        },
+        "sortBy": [
+          {
+            "displayName": "Requests",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "topk(20, sum(rate(proxi_pulse_requests_total[5m])) by (host))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "instance": true,
+              "job": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "host": "User Agent",
+              "Value": "Requests"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

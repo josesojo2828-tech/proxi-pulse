@@ -1,83 +1,15 @@
 {{define "content"}}
-<div class="dashboard" x-data="dashboardData()" x-init="init()">
-    <h2>Dashboard</h2>
-
-    <div class="cards" x-show="!loading">
-        <div class="card">
-            <div class="card-value" x-text="stats.total_sites">0</div>
-            <div class="card-label">Total Sites</div>
-        </div>
-        <div class="card">
-            <div class="card-value" x-text="stats.active_sites">0</div>
-            <div class="card-label">Active Sites</div>
-        </div>
-        <div class="card">
-            <div class="card-value" x-text="stats.total_visits">0</div>
-            <div class="card-label">Total Visits</div>
-        </div>
-        <div class="card">
-            <div class="card-value" x-text="stats.visits_today">0</div>
-            <div class="card-label">Visits Today</div>
+<div class="landing">
+    <h1>Proxi-Pulse</h1>
+    <p>Reverse proxy con geolocalización</p>
+    <div class="cards">
+        <div class="card" hx-get="/api/stats/overview" hx-trigger="load" hx-swap="innerHTML">
+            Loading stats...
         </div>
     </div>
-
-    <div x-show="loading" class="loading">Loading dashboard...</div>
-
-    <div class="chart-container" x-show="!loading && countries.length > 0">
-        <h3>Traffic by Country</h3>
-        <canvas id="countryChart" x-init="renderChart()"></canvas>
+    <div class="links">
+        <a href="/sites" class="btn">Manage Sites</a>
+        <a href="/visits" class="btn">View Visits</a>
     </div>
 </div>
-
-<script>
-    function dashboardData() {
-        return {
-            loading: true,
-            stats: { total_sites: 0, active_sites: 0, total_visits: 0, visits_today: 0 },
-            countries: [],
-            chart: null,
-            async init() {
-                try {
-                    const [overviewResp, countriesResp] = await Promise.all([
-                        fetch('/api/stats/overview').then(r => r.json()),
-                        fetch('/api/stats/countries').then(r => r.json())
-                    ]);
-                    if (overviewResp.ok) this.stats = overviewResp.data;
-                    if (countriesResp.ok) this.countries = countriesResp.data;
-                } catch (e) {
-                    console.error('Dashboard load error:', e);
-                } finally {
-                    this.loading = false;
-                    setTimeout(() => this.renderChart(), 50);
-                }
-            },
-            renderChart() {
-                if (!this.countries || !this.countries.length) return;
-                const ctx = document.getElementById('countryChart');
-                if (!ctx) return;
-                if (this.chart) this.chart.destroy();
-                this.chart = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: this.countries.map(d => d.country || 'Unknown'),
-                        datasets: [{
-                            data: this.countries.map(d => d.count),
-                            backgroundColor: [
-                                '#00d4aa', '#ff6b6b', '#4ecdc4', '#ffe66d',
-                                '#a29bfe', '#fd79a8', '#636e72', '#fdcb6e',
-                                '#00b894', '#e17055'
-                            ]
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { position: 'right', labels: { color: '#e0e0e0' } }
-                        }
-                    }
-                });
-            }
-        };
-    }
-</script>
 {{end}}

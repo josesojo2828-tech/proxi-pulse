@@ -8,6 +8,37 @@ services:
       - ./config.yaml:/etc/proxi-pulse/config.yaml:ro
       - ./data:/data
       - ./GeoLite2-City.mmdb:/data/GeoLite2-City.mmdb:ro
+    networks:
+      - monitoring
     restart: unless-stopped
-    environment:
-      PROXI_PULSE_CONFIG: /etc/proxi-pulse/config.yaml
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pp_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pp_grafana
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./grafana:/etc/grafana/provisioning:ro
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+networks:
+  monitoring:
+    driver: bridge
