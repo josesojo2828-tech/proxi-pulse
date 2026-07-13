@@ -107,6 +107,16 @@ make test     # Tests
 make clean    # Limpiar binarios
 ```
 
+## Roadmap v2
+
+| Feature | Estado | Descripción Técnica |
+|---------|--------|---------------------|
+| **⚖️ Load Balancing** | Pendiente | Soporte para múltiples upstreams por site con estrategias round-robin y least connections. El proxy manager debe cambiar de `map[string]*ReverseProxy` a `map[string][]*Upstream` con un health checker y balanceador. |
+| **🔒 SSL/TLS Automático** | Pendiente | Integración con `golang.org/x/crypto/acme/autocert` para Let's Encrypt. El proxy debe escuchar en puerto 443, obtener certificados automáticos por dominio, y redirigir HTTP→HTTPS. |
+| **🔑 Autenticación** | Pendiente | Login básico en el admin UI para proteger los datos de visitas y configuración de sites. |
+| **🧪 Tests de integración** | Pendiente | Tests con PostgreSQL/MaxMind reales en CI, testeo del proxy contra upstreams mockeados. |
+| **📊 Export de datos** | Pendiente | CSV de visitas y API paginada con filtros para integraciones externas. |
+
 ## Licencia
 
 MIT
