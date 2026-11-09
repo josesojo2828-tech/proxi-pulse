@@ -1,0 +1,35 @@
+# Binarios
+/bin/
+/proxi-pulse
+*.exe
+*.test
+*.out
+coverage.html
+*.prof
+
+# Config local
+config.yaml
+.env
+.env.*
+!.env.example
+
+# Datos locales (GeoIP, SQLite)
+data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.mmdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backups
+*.bak
+*.backup
