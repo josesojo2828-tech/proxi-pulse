@@ -25,7 +25,7 @@ El proxy captura país, ciudad, latencia y más — automaticamente.
 
 ```bash
 # 1. Clonar
-git clone https://github.com/josesojo2828/proxi-pulse.git
+git clone https://github.com/josesojo2828-tech/proxi-pulse.git
 cd proxi-pulse
 
 # 2. Descargar GeoLite2-City.mmdb

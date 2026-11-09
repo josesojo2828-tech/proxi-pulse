@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,13 +13,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/josesojo2828/proxi-pulse/internal/api"
-	"github.com/josesojo2828/proxi-pulse/internal/config"
-	"github.com/josesojo2828/proxi-pulse/internal/geo"
-	"github.com/josesojo2828/proxi-pulse/internal/metrics"
-	"github.com/josesojo2828/proxi-pulse/internal/proxy"
-	"github.com/josesojo2828/proxi-pulse/internal/store"
-	"github.com/josesojo2828/proxi-pulse/internal/web"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/api"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/config"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/geo"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/metrics"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/proxy"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/store"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/web"
 )
 
 func main() {
@@ -93,16 +94,24 @@ func run() error {
 	r.NotFound(proxyMiddleware.Handler(nil).ServeHTTP)
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
-		Handler: r,
+		Addr:      fmt.Sprintf(":%d", cfg.Server.Port),
+		Handler:   r,
+		TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
 	}
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		slog.Info("server starting", "port", cfg.Server.Port)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		slog.Info("server starting", "port", cfg.Server.Port, "tls", cfg.Server.TLSEnabled())
+
+		var err error
+		if cfg.Server.TLSEnabled() {
+			err = srv.ListenAndServeTLS(cfg.Server.CertFile, cfg.Server.KeyFile)
+		} else {
+			err = srv.ListenAndServe()
+		}
+		if err != nil && err != http.ErrServerClosed {
 			slog.Error("server error", "error", err)
 		}
 	}()

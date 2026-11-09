@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/josesojo2828/proxi-pulse/internal/proxy"
-	"github.com/josesojo2828/proxi-pulse/internal/store"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/proxy"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/store"
 )
 
 func setupTestAPI(t *testing.T) (*store.Store, chi.Router) {

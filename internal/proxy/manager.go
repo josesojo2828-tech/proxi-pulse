@@ -59,7 +59,9 @@ func (m *Manager) Get(domain string) *httputil.ReverseProxy {
 }
 
 // ReloadFromStore replaces all proxies with active sites from the store.
-func (m *Manager) ReloadFromStore(siteStore interface{ GetActiveSitesMap() (map[string]string, error) }) error {
+func (m *Manager) ReloadFromStore(siteStore interface {
+	GetActiveSitesMap() (map[string]string, error)
+}) error {
 	sites, err := siteStore.GetActiveSitesMap()
 	if err != nil {
 		return err

@@ -1,5 +1,9 @@
 server:
   port: 8080
+  # Set both paths to terminate TLS in proxi-pulse itself.
+  # Leave empty when TLS is handled by an upstream proxy.
+  cert_file: ""
+  key_file: ""
 
 db:
   path: /data/proxi-pulse.db

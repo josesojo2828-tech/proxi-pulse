@@ -1,4 +1,4 @@
-module github.com/josesojo2828/proxi-pulse
+module github.com/josesojo2828-tech/proxi-pulse
 
 go 1.25.0
 

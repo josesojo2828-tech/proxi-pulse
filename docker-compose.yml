@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.2.1
     container_name: pp_prometheus
     ports:
       - "9090:9090"
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.6.0
     container_name: pp_grafana
     ports:
       - "3000:3000"

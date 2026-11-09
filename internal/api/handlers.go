@@ -8,8 +8,8 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/josesojo2828/proxi-pulse/internal/proxy"
-	"github.com/josesojo2828/proxi-pulse/internal/store"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/proxy"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/store"
 )
 
 // apiResponse is the standard JSON envelope for all API responses.

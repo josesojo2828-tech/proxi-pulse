@@ -7,7 +7,7 @@ COPY . .
 RUN CGO_ENABLED=0 go build -o /app/proxi-pulse ./cmd/proxi-pulse
 
 # Runtime stage
-FROM gcr.io/distroless/static-debian12:latest
+FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=builder /app/proxi-pulse /usr/local/bin/proxi-pulse
 COPY --from=builder /app/web /web
 ENTRYPOINT ["proxi-pulse"]

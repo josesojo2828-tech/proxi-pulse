@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/josesojo2828/proxi-pulse/internal/geo"
-	"github.com/josesojo2828/proxi-pulse/internal/metrics"
-	"github.com/josesojo2828/proxi-pulse/internal/store"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/geo"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/metrics"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/store"
 )
 
 type Middleware struct {

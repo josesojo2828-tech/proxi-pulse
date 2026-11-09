@@ -16,7 +16,16 @@ type Config struct {
 
 // ServerConfig holds HTTP server settings.
 type ServerConfig struct {
-	Port int `yaml:"port"`
+	Port     int    `yaml:"port"`
+	CertFile string `yaml:"cert_file"`
+	KeyFile  string `yaml:"key_file"`
+}
+
+// TLSEnabled reports whether both the certificate and key paths are configured.
+// When enabled, the server terminates TLS itself instead of relying on an
+// upstream proxy.
+func (c ServerConfig) TLSEnabled() bool {
+	return c.CertFile != "" && c.KeyFile != ""
 }
 
 // DBConfig holds SQLite database settings.

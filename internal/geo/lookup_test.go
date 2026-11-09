@@ -29,10 +29,10 @@ func TestIsPrivate_IPv6(t *testing.T) {
 		ip      string
 		private bool
 	}{
-		{"::1", true},               // loopback
-		{"fc00::1", true},           // unique-local
-		{"fe80::1", true},           // link-local
-		{"2001:db8::1", false},      // documentation (not private per Go)
+		{"::1", true},                   // loopback
+		{"fc00::1", true},               // unique-local
+		{"fe80::1", true},               // link-local
+		{"2001:db8::1", false},          // documentation (not private per Go)
 		{"2606:4700:4700::1111", false}, // public Cloudflare DNS
 	}
 	for _, tt := range tests {

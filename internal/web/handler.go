@@ -5,9 +5,9 @@ import (
 	"io/fs"
 	"net/http"
 
-	webpkg "github.com/josesojo2828/proxi-pulse/web"
+	webpkg "github.com/josesojo2828-tech/proxi-pulse/web"
 
-	"github.com/josesojo2828/proxi-pulse/internal/store"
+	"github.com/josesojo2828-tech/proxi-pulse/internal/store"
 )
 
 type Handler struct {
